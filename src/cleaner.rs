@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio::process::Command;
+use std::fs;
 
 /// Result of cleaning a crate.
 pub struct CleanResult {
@@ -55,6 +56,24 @@ pub async fn clean_crate(
             error: Some(anyhow::Error::from(e)),
         },
     }
+}
+
+/// Recursively compute the size of a directory (in bytes).
+pub fn dir_size(path: &PathBuf) -> u64 {
+    let mut size = 0;
+    if let Ok(entries) = fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if let Ok(metadata) = path.metadata() {
+                    size += metadata.len();
+                }
+            } else if path.is_dir() {
+                size += dir_size(&path);
+            }
+        }
+    }
+    size
 }
 
 #[cfg(test)]
