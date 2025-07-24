@@ -12,7 +12,7 @@ readme = "README.md"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
-tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "process"] }
+tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "process", "sync"] }
 ignore = "0.4"
 console = "0.15"
 indicatif = "0.17"

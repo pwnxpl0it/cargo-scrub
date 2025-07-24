@@ -1,5 +1,6 @@
 mod cli;
-use cli::{Cli, LogLevel};
+use cli::Cli;
+use cargo_scrub::loglevel::LogLevel;
 use clap::Parser;
 use std::path::PathBuf;
 use std::sync::Arc;

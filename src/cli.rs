@@ -1,6 +1,6 @@
 use clap::{Parser};
 use std::path::PathBuf;
-use crate::loglevel::LogLevel;
+use cargo_scrub::loglevel::LogLevel;
 
 /// Recursively clean Rust crates in a directory tree.
 #[derive(Parser, Debug, Clone)]
