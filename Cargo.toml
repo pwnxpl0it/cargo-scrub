@@ -1,0 +1,27 @@
+[package]
+name = "cargo-scrub"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mohamed Tarek @pwnxpl0it"]
+description = "A polished CLI tool to recursively clean Rust crates in a directory tree."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourusername/cargo-scrub"
+homepage = "https://github.com/yourusername/cargo-scrub"
+keywords = ["cli", "rust", "cargo", "clean", "tool"]
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "process"] }
+ignore = "0.4"
+console = "0.15"
+indicatif = "0.17"
+colored = "2.1"
+log = "0.4"
+env_logger = "0.10"
+regex = "1.10"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+dialoguer = "0.11"
+anyhow = "1.0"
+thiserror = "1.0"
