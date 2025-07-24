@@ -1,6 +1,6 @@
 //! Logging setup for cargo-scrub.
 
-use crate::cli::LogLevel;
+use crate::loglevel::LogLevel;
 use env_logger::Builder;
 use log::LevelFilter;
 use std::io::Write;

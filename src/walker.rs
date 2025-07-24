@@ -11,10 +11,8 @@ pub async fn walk_crates(
 ) -> Result<Vec<PathBuf>> {
     let mut crates = Vec::new();
     let mut builder = WalkBuilder::new(&root);
-    if let Some(depth) = max_depth {
-        builder = builder.max_depth(depth);
-    }
-    builder = builder.git_ignore(true).hidden(false).follow_links(false);
+    builder.max_depth(max_depth);
+    builder.git_ignore(true).hidden(false).follow_links(false);
     let walker = builder.build();
     for result in walker {
         let entry = result?;

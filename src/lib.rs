@@ -1,5 +1,6 @@
 //! Core library for cargo-scrub: recursively cleaning Rust crates.
 
+pub mod loglevel;
 pub mod walker;
 pub mod detector;
 pub mod cleaner;

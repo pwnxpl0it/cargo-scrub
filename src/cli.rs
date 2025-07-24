@@ -1,5 +1,6 @@
-use clap::{Parser, ValueEnum};
+use clap::{Parser};
 use std::path::PathBuf;
+use crate::loglevel::LogLevel;
 
 /// Recursively clean Rust crates in a directory tree.
 #[derive(Parser, Debug, Clone)]
@@ -48,12 +49,4 @@ pub struct Cli {
     /// Set log level (info, debug, error, silent)
     #[arg(long, value_enum, default_value_t = LogLevel::Info)]
     pub log_level: LogLevel,
-}
-
-#[derive(ValueEnum, Debug, Clone)]
-pub enum LogLevel {
-    Error,
-    Info,
-    Debug,
-    Silent,
 } 
