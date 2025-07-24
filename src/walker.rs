@@ -3,11 +3,13 @@
 use std::path::{Path, PathBuf};
 use anyhow::Result;
 use ignore::WalkBuilder;
+use indicatif::ProgressBar;
 
 /// Recursively walk the directory tree and yield paths to Rust crates.
 pub async fn walk_crates(
     root: PathBuf,
     max_depth: Option<usize>,
+    progress: Option<&ProgressBar>,
 ) -> Result<Vec<PathBuf>> {
     let mut crates = Vec::new();
     let mut builder = WalkBuilder::new(&root);
@@ -17,6 +19,9 @@ pub async fn walk_crates(
     for result in walker {
         let entry = result?;
         let path = entry.path();
+        if let Some(pb) = progress {
+            pb.inc(1);
+        }
         if path.is_dir() && is_crate_dir(path) {
             crates.push(path.to_path_buf());
         }
@@ -33,6 +38,7 @@ mod tests {
     use super::*;
     use std::fs;
     use tempfile::tempdir;
+    use indicatif::ProgressBar;
 
     #[tokio::test]
     async fn test_walk_crates_finds_crates() {
@@ -43,7 +49,8 @@ mod tests {
         fs::create_dir_all(&crate2).unwrap();
         fs::write(crate1.join("Cargo.toml"), "[package]\nname = 'a'\nversion = '0.1.0'").unwrap();
         fs::write(crate2.join("Cargo.toml"), "[package]\nname = 'b'\nversion = '0.1.0'").unwrap();
-        let crates = walk_crates(dir.path().to_path_buf(), None).await.unwrap();
+        let pb = ProgressBar::hidden();
+        let crates = walk_crates(dir.path().to_path_buf(), None, Some(&pb)).await.unwrap();
         assert_eq!(crates.len(), 2);
         assert!(crates.contains(&crate1));
         assert!(crates.contains(&crate2));

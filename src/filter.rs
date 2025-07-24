@@ -11,6 +11,9 @@ pub struct CrateFilter {
 impl CrateFilter {
     /// Returns true if the given path matches the filter.
     pub fn matches(&self, path: &Path) -> bool {
+        if self.regex.is_none() && self.path_substr.is_none() {
+            return true;
+        }
         let path_str = path.to_string_lossy();
         if let Some(ref re) = self.regex {
             if re.is_match(&path_str) {
