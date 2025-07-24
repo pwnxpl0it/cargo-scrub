@@ -1,6 +1,16 @@
-use clap::{Parser};
+use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 use cargo_scrub::loglevel::LogLevel;
+
+#[derive(ValueEnum, Debug, Clone, Copy)]
+pub enum WorkspaceMode {
+    /// Clean only workspace root
+    Root,
+    /// Clean only workspace members
+    Members,
+    /// Clean both root and members
+    All,
+}
 
 /// Recursively clean Rust crates in a directory tree.
 #[derive(Parser, Debug, Clone)]
@@ -19,7 +29,7 @@ pub struct Cli {
     pub quiet: bool,
 
     /// Maximum directory depth to search
-    #[arg(long, value_name = "N")] 
+    #[arg(long, value_name = "N")]
     pub max_depth: Option<usize>,
 
     /// Number of concurrent cleaning jobs
@@ -49,4 +59,8 @@ pub struct Cli {
     /// Set log level (info, debug, error, silent)
     #[arg(long, value_enum, default_value_t = LogLevel::Info)]
     pub log_level: LogLevel,
+
+    /// Workspace cleaning mode: root, members, or all
+    #[arg(long, value_enum, default_value_t = WorkspaceMode::Members)]
+    pub workspace_mode: WorkspaceMode,
 } 
