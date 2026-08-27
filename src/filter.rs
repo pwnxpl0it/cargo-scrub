@@ -3,6 +3,7 @@
 use regex::Regex;
 use std::path::Path;
 
+#[derive(Debug, Clone)]
 pub struct CrateFilter {
     pub regex: Option<Regex>,
     pub path_substr: Option<String>,

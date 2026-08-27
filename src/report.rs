@@ -4,6 +4,7 @@ use std::time::Duration;
 use std::path::PathBuf;
 use colored::*;
 
+#[derive(Debug, Clone)]
 pub struct SummaryReport {
     pub cleaned: usize,
     pub skipped: usize,
@@ -11,6 +12,19 @@ pub struct SummaryReport {
     pub total: usize,
     pub duration: Duration,
     pub details: Vec<(PathBuf, bool, Option<String>)>, // (path, success, error)
+}
+
+/// Format bytes as a human-readable string.
+pub fn format_size(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+    match bytes {
+        b if b >= GB => format!("{:.2} GiB", b as f64 / GB as f64),
+        b if b >= MB => format!("{:.2} MiB", b as f64 / MB as f64),
+        b if b >= KB => format!("{:.2} KiB", b as f64 / KB as f64),
+        _ => format!("{} B", bytes),
+    }
 }
 
 impl SummaryReport {

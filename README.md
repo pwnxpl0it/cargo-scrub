@@ -7,6 +7,7 @@ A polished, fast, and safe CLI tool to recursively clean Rust crates in a direct
 - 🚀 **Recursively walks directories to find and clean Rust crates**
 - 🧹 **Runs `cargo clean` in each detected crate**
 - ⚡ **Async, parallel cleaning with configurable concurrency**
+- 📊 **Modern full-screen interactive TUI dashboard powered by ratatui**
 - 🎛️ **Beautiful CLI with rich options (dry-run, quiet, max-depth, jobs, etc.)**
 - 📝 **Supports config file (`.rustcleaner.toml`) for persistent defaults**
 - 🔍 **Filter crates by name, path, or regex**
@@ -37,6 +38,7 @@ cargo-scrub [OPTIONS] [PATH]
 
 ### Common Options
 
+- `--tui`               : Launch full-screen interactive TUI dashboard
 - `--dry-run`           : Show what would be cleaned, but don’t actually clean
 - `--quiet, -q`         : Suppress most output
 - `--max-depth <N>`     : Limit directory traversal depth
@@ -44,9 +46,32 @@ cargo-scrub [OPTIONS] [PATH]
 - `--interactive`       : Prompt before cleaning each crate
 - `--filter <REGEX>`    : Only clean crates matching regex (by name or path)
 - `--skip-workspaces`   : Skip workspace roots
+- `--workspace-mode`    : Workspace mode (`root`, `members`, or `all`)
 - `--check`             : Only list crates that would be cleaned
 - `--config <FILE>`     : Load options from a config file
 - `--log-level <LEVEL>` : Set log level (info, debug, error, silent)
+
+### TUI Dashboard Mode
+
+Launch `cargo-scrub` with `--tui` to enter the keyboard-driven dashboard:
+
+```bash
+cargo-scrub --tui
+```
+
+#### Keybindings
+
+| Key | Review Screen | Running Screen | Summary Screen |
+|---|---|---|---|
+| `Up/Down`, `j/k` | Move selection | Scroll view | Scroll view |
+| `g` / `G` | Jump to top / bottom | Jump to top / bottom | Jump to top / bottom |
+| `Space` | Toggle crate selection | — | — |
+| `a` / `A` | Select all / deselect all | — | — |
+| `/` | Filter crates by path | — | — |
+| `d` | Toggle dry-run mode | — | — |
+| `c` / `Enter` | Start cleaning selected crates | — | — |
+| `?` | Toggle help overlay | Toggle help overlay | Toggle help overlay |
+| `q` / `Esc` | Quit | Quit (with confirmation) | Quit |
 
 ### Examples
 
