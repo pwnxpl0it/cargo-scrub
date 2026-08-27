@@ -51,6 +51,10 @@ pub struct Cli {
     #[arg(long, value_enum, default_value_t = LogLevel::Info)]
     pub log_level: LogLevel,
 
+    /// Launch full-screen interactive dashboard
+    #[arg(long, conflicts_with = "interactive")]
+    pub tui: bool,
+
     /// Workspace cleaning mode: root, members, or all
     #[arg(long, value_enum, default_value_t = WorkspaceMode::Members)]
     pub workspace_mode: WorkspaceMode,
