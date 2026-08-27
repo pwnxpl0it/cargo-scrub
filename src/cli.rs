@@ -1,16 +1,7 @@
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use std::path::PathBuf;
 use cargo_scrub::loglevel::LogLevel;
-
-#[derive(ValueEnum, Debug, Clone, Copy)]
-pub enum WorkspaceMode {
-    /// Clean only workspace root
-    Root,
-    /// Clean only workspace members
-    Members,
-    /// Clean both root and members
-    All,
-}
+use cargo_scrub::engine::WorkspaceMode;
 
 /// Recursively clean Rust crates in a directory tree.
 #[derive(Parser, Debug, Clone)]
@@ -63,4 +54,4 @@ pub struct Cli {
     /// Workspace cleaning mode: root, members, or all
     #[arg(long, value_enum, default_value_t = WorkspaceMode::Members)]
     pub workspace_mode: WorkspaceMode,
-} 
+}
