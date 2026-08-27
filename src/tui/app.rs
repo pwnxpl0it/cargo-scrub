@@ -7,7 +7,6 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::widgets::TableState;
 
 use cargo_scrub::engine::{CrateInfo, ScrubEvent, ScrubOptions};
-use cargo_scrub::filter::CrateFilter;
 use cargo_scrub::report::{format_size, SummaryReport};
 
 /// Current screen in the TUI flow.
@@ -79,7 +78,10 @@ pub struct App {
     pub scan_visited: u64,
     pub run_start: Option<Instant>,
     pub status_line: String,
+    pub tick_count: usize,
 }
+
+const SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 impl App {
     pub fn new(options: ScrubOptions) -> Self {
@@ -100,11 +102,28 @@ impl App {
             scan_visited: 0,
             run_start: None,
             status_line: String::from("Scanning for Rust projects..."),
+            tick_count: 0,
         }
+    }
+
+    pub fn tick(&mut self) {
+        self.tick_count = self.tick_count.wrapping_add(1);
+    }
+
+    pub fn spinner(&self) -> &'static str {
+        SPINNER_FRAMES[(self.tick_count / 3) % SPINNER_FRAMES.len()]
     }
 
     pub fn selected_count(&self) -> usize {
         self.crates.iter().filter(|r| r.info.selected).count()
+    }
+
+    pub fn cleaned_count(&self) -> usize {
+        self.crates.iter().filter(|r| r.status == CrateStatus::Done).count()
+    }
+
+    pub fn active_count(&self) -> usize {
+        self.crates.iter().filter(|r| r.status == CrateStatus::Cleaning).count()
     }
 
     pub fn reclaimable_bytes(&self) -> u64 {
@@ -391,6 +410,7 @@ impl App {
 mod tests {
     use super::*;
     use cargo_scrub::engine::WorkspaceMode;
+    use cargo_scrub::filter::CrateFilter;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use std::path::PathBuf;
 
