@@ -46,6 +46,7 @@ pub async fn run_tui(options: ScrubOptions) -> Result<()> {
     let mut clean_rx: Option<mpsc::UnboundedReceiver<ScrubEvent>> = None;
 
     let result = loop {
+        app.tick();
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
         while let Ok(scrub_event) = event_rx.try_recv() {
