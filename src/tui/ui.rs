@@ -354,7 +354,7 @@ fn draw_table(f: &mut Frame, app: &mut App, area: Rect) {
                 Style::new().fg(Color::Green)
             };
 
-            let marker = if row.info.selected { "▶" } else { " " };
+            let marker = if row.info.selected { "▌" } else { " " };
             let marker_style = if row.info.selected { Style::new().fg(Color::LightGreen) } else { Style::new() };
 
             Row::new(vec![
@@ -428,13 +428,13 @@ fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
         Screen::Scanning | Screen::Empty => key_badge("q", "Quit"),
         Screen::Review => {
             let mut v = Vec::new();
-            v.extend(key_badge("↑/↓", "Navigate"));
+            v.extend(key_badge("Up/Down", "Navigate"));
             v.extend(key_badge("Space", "Toggle"));
             v.extend(key_badge("a", "All"));
             v.extend(key_badge("A", "None"));
             v.extend(key_badge("/", "Filter"));
             v.extend(key_badge("d", "Dry-run"));
-            v.extend(key_badge("c / ↵", "Start Clean"));
+            v.extend(key_badge("c / Enter", "Start Clean"));
             v.extend(key_badge("?", "Help"));
             v.extend(key_badge("q", "Quit"));
             v
@@ -447,7 +447,7 @@ fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
         }
         Screen::Summary => {
             let mut v = Vec::new();
-            v.extend(key_badge("↑/↓", "Scroll"));
+            v.extend(key_badge("Up/Down", "Scroll"));
             v.extend(key_badge("q / Esc", "Exit"));
             v.extend(key_badge("?", "Help"));
             v
@@ -485,7 +485,7 @@ fn draw_help(f: &mut Frame) {
         Line::from(vec![
             Span::styled("Navigation & Selection:", Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
         ]),
-        Line::from("  ↑ / ↓, j / k       Move selection up / down"),
+        Line::from("  Up / Down, j / k   Move selection up / down"),
         Line::from("  g / G              Jump directly to top / bottom"),
         Line::from("  Space              Toggle selection on focused project"),
         Line::from("  a / A              Select all / Deselect all projects"),

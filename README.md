@@ -63,7 +63,7 @@ cargo-scrub --tui
 
 | Key | Review Screen | Running Screen | Summary Screen |
 |---|---|---|---|
-| `↑/↓`, `j/k` | Move selection | Scroll view | Scroll view |
+| `Up/Down`, `j/k` | Move selection | Scroll view | Scroll view |
 | `g` / `G` | Jump to top / bottom | Jump to top / bottom | Jump to top / bottom |
 | `Space` | Toggle crate selection | — | — |
 | `a` / `A` | Select all / deselect all | — | — |
