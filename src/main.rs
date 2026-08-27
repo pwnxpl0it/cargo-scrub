@@ -1,4 +1,5 @@
 mod cli;
+mod tui;
 use cli::Cli;
 use clap::Parser;
 use std::sync::Arc;
@@ -36,6 +37,10 @@ async fn main() -> anyhow::Result<()> {
         filter,
         selected: None,
     };
+
+    if cli.tui {
+        return tui::run_tui(options).await;
+    }
 
     let detect_pb = detection_spinner();
     let detect_pb_ref = &detect_pb;
