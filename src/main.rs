@@ -11,7 +11,7 @@ use cargo_scrub::engine::{
     clean_selected, discover_crates, detection_spinner, cleaning_progress_bar, ScrubOptions,
 };
 use cargo_scrub::filter::CrateFilter;
-use cargo_scrub::config::{load_config, AppConfig};
+use cargo_scrub::config::load_config;
 use cargo_scrub::report::format_size;
 use cargo_scrub::logging::init_logging;
 
@@ -21,18 +21,41 @@ async fn main() -> anyhow::Result<()> {
     let config = if let Some(ref path) = cli.config {
         load_config(path).unwrap_or_default()
     } else {
-        AppConfig::default()
+        let default_path = std::path::PathBuf::from(".rustcleaner.toml");
+        load_config(&default_path).unwrap_or_default()
     };
-    // TODO: Merge config and CLI (CLI takes precedence)
-    init_logging(cli.log_level.clone(), cli.quiet);
 
-    let filter = CrateFilter::from_options(cli.filter.as_deref(), None).unwrap();
+    let (
+        path,
+        dry_run,
+        quiet,
+        max_depth,
+        jobs,
+        interactive,
+        filter_str,
+        skip_workspaces,
+        log_level,
+    ) = config.merge_with_cli(
+        cli.path,
+        cli.dry_run,
+        cli.quiet,
+        cli.max_depth,
+        cli.jobs,
+        cli.interactive,
+        cli.filter,
+        cli.skip_workspaces,
+        cli.log_level,
+    );
+
+    init_logging(log_level, quiet);
+
+    let filter = CrateFilter::from_options(filter_str.as_deref(), None).unwrap();
     let options = ScrubOptions {
-        root: cli.path.clone(),
-        max_depth: cli.max_depth,
-        dry_run: cli.dry_run,
-        jobs: cli.jobs,
-        skip_workspaces: cli.skip_workspaces,
+        root: path,
+        max_depth,
+        dry_run,
+        jobs,
+        skip_workspaces,
         workspace_mode: cli.workspace_mode,
         filter,
         selected: None,
@@ -79,7 +102,7 @@ async fn main() -> anyhow::Result<()> {
         &options,
         paths,
         None,
-        cli.interactive,
+        interactive,
         Some(pb),
     )
     .await?;
