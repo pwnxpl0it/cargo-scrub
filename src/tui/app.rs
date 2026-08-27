@@ -385,14 +385,6 @@ impl App {
         }
         self.status_line = String::from("Cleaning selected projects...");
     }
-
-    pub fn apply_engine_filter(&mut self) {
-        if let Some(ref query) = self.filter_query {
-            if let Ok(filter) = CrateFilter::from_options(Some(query), None) {
-                self.options.filter = filter;
-            }
-        }
-    }
 }
 
 #[cfg(test)]
@@ -479,5 +471,101 @@ mod tests {
         let mut app = App::new(sample_options());
         app.handle_scrub_event(ScrubEvent::ScanComplete { crates: vec![] });
         assert_eq!(app.screen, Screen::Empty);
+    }
+
+    #[test]
+    fn test_move_navigation_and_top_bottom() {
+        let mut app = App::new(sample_options());
+        app.crates = vec![
+            sample_row("/a", true),
+            sample_row("/b", true),
+            sample_row("/c", true),
+        ];
+        app.table_state.select(Some(0));
+
+        app.apply_action(Action::MoveDown);
+        assert_eq!(app.table_state.selected(), Some(1));
+
+        app.apply_action(Action::MoveDown);
+        assert_eq!(app.table_state.selected(), Some(2));
+
+        app.apply_action(Action::MoveUp);
+        assert_eq!(app.table_state.selected(), Some(1));
+
+        app.apply_action(Action::MoveBottom);
+        assert_eq!(app.table_state.selected(), Some(2));
+
+        app.apply_action(Action::MoveTop);
+        assert_eq!(app.table_state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_toggle_dry_run_action() {
+        let mut app = App::new(sample_options());
+        assert!(!app.options.dry_run);
+        app.apply_action(Action::ToggleDryRun);
+        assert!(app.options.dry_run);
+        app.apply_action(Action::ToggleDryRun);
+        assert!(!app.options.dry_run);
+    }
+
+    #[test]
+    fn test_clean_lifecycle_events() {
+        let mut app = App::new(sample_options());
+        let path = PathBuf::from("/a");
+        app.crates = vec![sample_row("/a", true)];
+        app.begin_clean();
+        assert_eq!(app.screen, Screen::Running);
+        assert_eq!(app.crates[0].status, CrateStatus::Pending);
+
+        app.handle_scrub_event(ScrubEvent::CleanStarted { path: path.clone() });
+        assert_eq!(app.crates[0].status, CrateStatus::Cleaning);
+
+        app.handle_scrub_event(ScrubEvent::CleanFinished {
+            path: path.clone(),
+            success: true,
+            error: None,
+            duration: std::time::Duration::from_millis(50),
+        });
+        assert_eq!(app.crates[0].status, CrateStatus::Done);
+
+        let report = SummaryReport {
+            cleaned: 1,
+            skipped: 0,
+            errors: 0,
+            total: 1,
+            duration: std::time::Duration::from_millis(50),
+            details: vec![(path, true, None)],
+        };
+        app.handle_scrub_event(ScrubEvent::AllComplete {
+            report,
+            reclaimed_bytes: 1024,
+        });
+        assert_eq!(app.screen, Screen::Summary);
+        assert_eq!(app.reclaimed_bytes, 1024);
+    }
+
+    #[test]
+    fn test_filter_typing_and_cancel() {
+        let mut app = App::new(sample_options());
+        app.apply_action(Action::StartFilter);
+        assert!(app.filter_active);
+
+        app.apply_action(Action::FilterInput('f'));
+        app.apply_action(Action::FilterInput('o'));
+        app.apply_action(Action::FilterInput('o'));
+        assert_eq!(app.filter_input, "foo");
+
+        app.apply_action(Action::FilterBackspace);
+        assert_eq!(app.filter_input, "fo");
+
+        app.apply_action(Action::ConfirmFilter);
+        assert!(!app.filter_active);
+        assert_eq!(app.filter_query, Some("fo".to_string()));
+
+        app.apply_action(Action::StartFilter);
+        app.apply_action(Action::CancelFilter);
+        assert!(!app.filter_active);
+        assert!(app.filter_input.is_empty());
     }
 }
