@@ -261,28 +261,29 @@ pub async fn clean_selected(
             );
 
             let result: CleanResult = clean_crate(path.clone(), dry_run).await;
+            let success = result.is_success();
+            let error = result.error_message();
 
             if let Some(ref pb) = pb {
                 pb.inc(1);
-                if result.success {
+                if success {
                     pb.set_message(format!("cleaned: {}", path.display()));
                 } else {
                     pb.set_message(format!("error: {}", path.display()));
                 }
             }
 
-            let error = result.error.map(|e| e.to_string());
             emit(
                 &event_tx,
                 ScrubEvent::CleanFinished {
                     path: result.path.clone(),
-                    success: result.success,
+                    success,
                     error: error.clone(),
                     duration: result.duration,
                 },
             );
 
-            (result.path, result.success, error)
+            (result.path, success, error)
         });
         handles.push(handle);
     }
