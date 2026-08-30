@@ -5,8 +5,8 @@ edition = "2021"
 authors = ["Mohamed Tarek @pwnxpl0it"]
 description = "A polished CLI tool to recursively clean Rust crates in a directory tree."
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/cargo-scrub"
-homepage = "https://github.com/yourusername/cargo-scrub"
+repository = "https://github.com/pwnxpl0it/cargo-scrub"
+homepage = "https://github.com/pwnxpl0it/cargo-scrub"
 keywords = ["cli", "rust", "cargo", "clean", "tool"]
 readme = "README.md"
 
