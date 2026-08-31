@@ -9,7 +9,7 @@ A polished, fast, and safe CLI tool to recursively clean Rust crates in a direct
 - ⚡ **Async, parallel cleaning with configurable concurrency**
 - 📊 **Modern full-screen interactive TUI dashboard powered by ratatui**
 - 🎛️ **Beautiful CLI with rich options (dry-run, quiet, max-depth, jobs, etc.)**
-- 📝 **Supports config file (`.rustcleaner.toml`) for persistent defaults**
+- 📝 **Supports config file (`.cargo-scrub.toml`) for persistent defaults**
 - 🔍 **Filter crates by name, path, or regex**
 - 🏷️ **.gitignore-aware directory walking**
 - 🧩 **Detects and handles workspaces**
@@ -98,7 +98,7 @@ cargo-scrub --tui
 
 ## Configuration
 
-You can create a `.rustcleaner.toml` file in your project or home directory to persist default options:
+You can create a `.cargo-scrub.toml` file in your project or home directory to persist default options:
 
 ```toml
 jobs = 8
