@@ -442,4 +442,38 @@ mod tests {
         let filtered = resolve_filtered_paths(&[ws_root.clone()], &options);
         assert!(filtered.is_empty());
     }
+
+    #[tokio::test]
+    async fn test_cleaning_concurrency_bounded_by_jobs() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let max_concurrent_observed = Arc::new(AtomicUsize::new(0));
+        let active_tasks = Arc::new(AtomicUsize::new(0));
+        let jobs = 2;
+        let semaphore = Arc::new(Semaphore::new(jobs));
+
+        let mut handles = Vec::new();
+        for _ in 0..10 {
+            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let active = active_tasks.clone();
+            let max_obs = max_concurrent_observed.clone();
+            let handle = tokio::spawn(async move {
+                let _permit = permit;
+                let current = active.fetch_add(1, Ordering::SeqCst) + 1;
+                max_obs.fetch_max(current, Ordering::SeqCst);
+                std::thread::sleep(std::time::Duration::from_millis(20));
+                active.fetch_sub(1, Ordering::SeqCst);
+            });
+            handles.push(handle);
+        }
+
+        for h in handles {
+            h.await.unwrap();
+        }
+
+        assert!(
+            max_concurrent_observed.load(Ordering::SeqCst) <= jobs,
+            "Active concurrent tasks exceeded jobs limit"
+        );
+    }
 }
