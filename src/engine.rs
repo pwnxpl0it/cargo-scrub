@@ -296,28 +296,29 @@ pub async fn clean_selected(
             );
 
             let result: CleanResult = clean_crate(path.clone(), dry_run).await;
+            let success = result.is_success();
+            let error = result.error_message();
 
             if let Some(ref pb) = pb {
                 pb.inc(1);
-                if result.success {
+                if success {
                     pb.set_message(format!("cleaned: {}", path.display()));
                 } else {
                     pb.set_message(format!("error: {}", path.display()));
                 }
             }
 
-            let error = result.error.map(|e| e.to_string());
             emit(
                 &event_tx,
                 ScrubEvent::CleanFinished {
                     path: result.path.clone(),
-                    success: result.success,
+                    success,
                     error: error.clone(),
                     duration: result.duration,
                 },
             );
 
-            (result.path, result.success, error)
+            (result.path, success, error)
         });
         handles.push(handle);
     }
@@ -607,5 +608,38 @@ mod tests {
 
         assert_eq!(plan.crates.len(), 1);
         assert_eq!(plan.crates[0].path, keep);
+    }
+    #[tokio::test]
+    async fn test_cleaning_concurrency_bounded_by_jobs() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let max_concurrent_observed = Arc::new(AtomicUsize::new(0));
+        let active_tasks = Arc::new(AtomicUsize::new(0));
+        let jobs = 2;
+        let semaphore = Arc::new(Semaphore::new(jobs));
+
+        let mut handles = Vec::new();
+        for _ in 0..10 {
+            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let active = active_tasks.clone();
+            let max_obs = max_concurrent_observed.clone();
+            let handle = tokio::spawn(async move {
+                let _permit = permit;
+                let current = active.fetch_add(1, Ordering::SeqCst) + 1;
+                max_obs.fetch_max(current, Ordering::SeqCst);
+                std::thread::sleep(std::time::Duration::from_millis(20));
+                active.fetch_sub(1, Ordering::SeqCst);
+            });
+            handles.push(handle);
+        }
+
+        for h in handles {
+            h.await.unwrap();
+        }
+
+        assert!(
+            max_concurrent_observed.load(Ordering::SeqCst) <= jobs,
+            "Active concurrent tasks exceeded jobs limit"
+        );
     }
 }

@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
     let config = if let Some(ref path) = cli.config {
         load_config(path).unwrap_or_default()
     } else {
-        let default_path = std::path::PathBuf::from(".rustcleaner.toml");
+        let default_path = std::path::PathBuf::from(".cargo-scrub.toml");
         load_config(&default_path).unwrap_or_default()
     };
 
