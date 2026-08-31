@@ -8,7 +8,8 @@ use std::thread;
 use std::time::Duration;
 
 use cargo_scrub::engine::{
-    clean_selected, discover_crates, detection_spinner, cleaning_progress_bar, ScrubOptions,
+    build_clean_plan, clean_selected, discover_crates, detection_spinner, cleaning_progress_bar,
+    CleanPlan, ScrubOptions,
 };
 use cargo_scrub::filter::CrateFilter;
 use cargo_scrub::config::load_config;
@@ -87,20 +88,19 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    if cli.check {
-        println!("{}", "Rust projects that would be cleaned:".cyan());
-        for info in &crates {
-            println!("  {}", info.path.display());
-        }
-        println!("{}", format!("Total: {}", crates.len()).bold());
+    // Discovery + filtering produced `crates`; the plan is the common
+    // representation for check, dry-run, and real execution.
+    let plan = build_clean_plan(&crates);
+
+    if cli.check || dry_run {
+        print_plan(&plan, dry_run && !cli.check);
         return Ok(());
     }
 
-    let paths: Vec<_> = crates.iter().map(|c| c.path.clone()).collect();
-    let pb = Arc::new(cleaning_progress_bar(paths.len()));
+    let pb = Arc::new(cleaning_progress_bar(plan.crates.len()));
     let (report, reclaimed) = clean_selected(
         &options,
-        paths,
+        plan,
         None,
         interactive,
         Some(pb),
@@ -110,4 +110,22 @@ async fn main() -> anyhow::Result<()> {
     report.print_summary();
     println!("{} {}", "Total cleaned space:".bold(), format_size(reclaimed));
     Ok(())
+}
+
+/// Print a check/dry-run listing from the plan. Does not spawn cargo.
+fn print_plan(plan: &CleanPlan, dry_run: bool) {
+    let title = if dry_run {
+        "Dry run — Rust projects that would be cleaned:"
+    } else {
+        "Rust projects that would be cleaned:"
+    };
+    println!("{}", title.cyan());
+    for crate_info in &plan.crates {
+        println!("  {}", crate_info.path.display());
+    }
+    println!("{}", format!("Total: {}", plan.crates.len()).bold());
+    println!(
+        "{}",
+        format!("Reclaimable: {}", format_size(plan.reclaimable_bytes())).bold()
+    );
 }

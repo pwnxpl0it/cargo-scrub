@@ -50,6 +50,37 @@ pub struct CrateInfo {
     pub selected: bool,
 }
 
+/// Crates selected for cleaning after discovery and filtering.
+///
+/// Check and dry-run report this plan without spawning `cargo clean`.
+/// Real execution consumes the same plan via [`clean_selected`].
+#[derive(Debug, Clone)]
+pub struct CleanPlan {
+    pub crates: Vec<CrateInfo>,
+}
+
+impl CleanPlan {
+    pub fn is_empty(&self) -> bool {
+        self.crates.is_empty()
+    }
+
+    pub fn paths(&self) -> Vec<PathBuf> {
+        self.crates.iter().map(|c| c.path.clone()).collect()
+    }
+
+    /// Total reclaimable bytes across all planned crates.
+    pub fn reclaimable_bytes(&self) -> u64 {
+        self.crates.iter().map(|c| c.target_size).sum()
+    }
+}
+
+/// Convert discovered (already filtered) crates into a [`CleanPlan`].
+pub fn build_clean_plan(crates: &[CrateInfo]) -> CleanPlan {
+    CleanPlan {
+        crates: crates.to_vec(),
+    }
+}
+
 /// Progress events emitted during a scrub run.
 #[derive(Debug, Clone)]
 pub enum ScrubEvent {
@@ -184,14 +215,18 @@ pub async fn discover_crates(
     Ok(infos)
 }
 
-/// Clean the given crate paths in parallel.
+/// Clean the crates in `plan` in parallel.
+///
+/// When `options.dry_run` is set, each crate is recorded as a successful
+/// dry-run and `cargo clean` is not spawned.
 pub async fn clean_selected(
     options: &ScrubOptions,
-    paths: Vec<PathBuf>,
+    plan: CleanPlan,
     event_tx: Option<mpsc::UnboundedSender<ScrubEvent>>,
     interactive: bool,
     progress: Option<Arc<ProgressBar>>,
 ) -> Result<(SummaryReport, u64)> {
+    let paths = plan.paths();
     if paths.is_empty() {
         let report = SummaryReport {
             cleaned: 0,
@@ -211,7 +246,7 @@ pub async fn clean_selected(
         return Ok((report, 0));
     }
 
-    let pre_clean_space: u64 = paths.iter().map(|p| target_dir_size(p)).sum();
+    let pre_clean_space = plan.reclaimable_bytes();
     let semaphore = Arc::new(Semaphore::new(options.jobs));
     let mut handles = Vec::new();
     let start = Instant::now();
@@ -441,5 +476,136 @@ mod tests {
 
         let filtered = resolve_filtered_paths(&[ws_root.clone()], &options);
         assert!(filtered.is_empty());
+    }
+
+    fn crate_info(path: PathBuf, target_size: u64) -> CrateInfo {
+        CrateInfo {
+            path,
+            is_workspace_root: false,
+            target_size,
+            selected: true,
+        }
+    }
+
+    fn test_options(root: PathBuf, dry_run: bool) -> ScrubOptions {
+        ScrubOptions {
+            root,
+            max_depth: None,
+            dry_run,
+            jobs: 1,
+            skip_workspaces: false,
+            workspace_mode: WorkspaceMode::Members,
+            filter: CrateFilter::from_options(None, None).unwrap(),
+            selected: None,
+        }
+    }
+
+    fn write_crate_with_target(root: &Path, name: &str) -> (PathBuf, PathBuf) {
+        let crate_dir = root.join(name);
+        fs::create_dir_all(crate_dir.join("src")).unwrap();
+        fs::create_dir_all(crate_dir.join("target")).unwrap();
+        fs::write(
+            crate_dir.join("Cargo.toml"),
+            format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2021\"\n"),
+        )
+        .unwrap();
+        fs::write(crate_dir.join("src/lib.rs"), "").unwrap();
+        let artifact = crate_dir.join("target/artifact.bin");
+        fs::write(&artifact, b"keep-or-clean").unwrap();
+        (crate_dir, artifact)
+    }
+
+    #[test]
+    fn build_clean_plan_preserves_paths_and_sizes() {
+        let crates = vec![
+            crate_info(PathBuf::from("/a"), 100),
+            crate_info(PathBuf::from("/b"), 200),
+        ];
+        let plan = build_clean_plan(&crates);
+        assert_eq!(plan.paths(), vec![PathBuf::from("/a"), PathBuf::from("/b")]);
+        assert_eq!(plan.reclaimable_bytes(), 300);
+    }
+
+    #[test]
+    fn build_clean_plan_empty_input() {
+        let plan = build_clean_plan(&[]);
+        assert!(plan.is_empty());
+        assert_eq!(plan.reclaimable_bytes(), 0);
+    }
+
+    #[test]
+    fn check_and_dry_run_report_from_plan_without_execution() {
+        // `--check` and `--dry-run` print the plan and return; they never
+        // call `clean_selected`. Building the plan is a pure transformation.
+        let dir = tempdir().unwrap();
+        let (crate_a, artifact) = write_crate_with_target(dir.path(), "a");
+        let infos = vec![crate_info(crate_a, 13)];
+        let plan = build_clean_plan(&infos);
+        assert_eq!(plan.crates.len(), 1);
+        assert_eq!(plan.reclaimable_bytes(), 13);
+        assert!(
+            artifact.exists(),
+            "reporting from the plan must not touch the filesystem"
+        );
+    }
+
+    #[tokio::test]
+    async fn dry_run_clean_selected_does_not_remove_target() {
+        let dir = tempdir().unwrap();
+        let (crate_a, artifact) = write_crate_with_target(dir.path(), "a");
+        let plan = build_clean_plan(&[crate_info(crate_a, 13)]);
+        let options = test_options(dir.path().to_path_buf(), true);
+
+        let (report, _) = clean_selected(&options, plan, None, false, None)
+            .await
+            .unwrap();
+
+        assert_eq!(report.cleaned, 1);
+        assert_eq!(report.errors, 0);
+        assert!(
+            artifact.exists(),
+            "dry-run must not invoke cargo clean"
+        );
+    }
+
+    #[tokio::test]
+    async fn execution_cleans_only_planned_crates() {
+        let dir = tempdir().unwrap();
+        let (crate_a, artifact_a) = write_crate_with_target(dir.path(), "a");
+        let (_crate_b, artifact_b) = write_crate_with_target(dir.path(), "b");
+
+        let plan = build_clean_plan(&[crate_info(crate_a, 13)]);
+        let options = test_options(dir.path().to_path_buf(), false);
+
+        let (report, _) = clean_selected(&options, plan, None, false, None)
+            .await
+            .unwrap();
+
+        assert_eq!(report.errors, 0);
+        assert_eq!(report.cleaned, 1);
+        assert!(
+            !artifact_a.exists(),
+            "planned crate must be cleaned"
+        );
+        assert!(
+            artifact_b.exists(),
+            "crates not in the plan must be left untouched"
+        );
+    }
+
+    #[tokio::test]
+    async fn discover_then_plan_respects_filters() {
+        let dir = tempdir().unwrap();
+        let (keep, _) = write_crate_with_target(dir.path(), "keep_me");
+        let (_drop, _) = write_crate_with_target(dir.path(), "skip_me");
+
+        let mut options = test_options(dir.path().to_path_buf(), true);
+        options.filter = CrateFilter::from_options(Some("keep_me"), None).unwrap();
+
+        let crates = discover_crates(&options, None, None).await.unwrap();
+        let plan = build_clean_plan(&crates);
+
+        assert_eq!(plan.crates.len(), 1);
+        assert_eq!(plan.crates[0].path, keep);
     }
 }

@@ -16,7 +16,9 @@ use crossterm::{
 use ratatui::{backend::CrosstermBackend, Terminal};
 use tokio::sync::mpsc;
 
-use cargo_scrub::engine::{clean_selected, discover_crates, ScrubEvent, ScrubOptions};
+use cargo_scrub::engine::{
+    build_clean_plan, clean_selected, discover_crates, ScrubEvent, ScrubOptions,
+};
 use cargo_scrub::report::format_size;
 
 use app::App;
@@ -61,12 +63,12 @@ pub async fn run_tui(options: ScrubOptions) -> Result<()> {
 
         if app.pending_clean {
             app.begin_clean();
-            let paths = app.selected_paths();
+            let plan = build_clean_plan(&app.selected_crates());
             let clean_options = options.clone();
             let (tx, rx) = mpsc::unbounded_channel();
             clean_rx = Some(rx);
             tokio::spawn(async move {
-                let _ = clean_selected(&clean_options, paths, Some(tx), false, None).await;
+                let _ = clean_selected(&clean_options, plan, Some(tx), false, None).await;
             });
         }
 

@@ -1,6 +1,5 @@
 //! TUI application state and event reducers.
 
-use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -159,11 +158,11 @@ impl App {
             .collect()
     }
 
-    pub fn selected_paths(&self) -> Vec<PathBuf> {
+    pub fn selected_crates(&self) -> Vec<CrateInfo> {
         self.crates
             .iter()
             .filter(|r| r.info.selected)
-            .map(|r| r.info.path.clone())
+            .map(|r| r.info.clone())
             .collect()
     }
 
