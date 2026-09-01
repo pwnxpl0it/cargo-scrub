@@ -92,8 +92,15 @@ async fn main() -> anyhow::Result<()> {
     // representation for check, dry-run, and real execution.
     let plan = build_clean_plan(&crates);
 
-    if cli.check || dry_run {
-        print_plan(&plan, dry_run && !cli.check);
+    if !cli.clean || dry_run {
+        print_plan(&plan, dry_run);
+        if !cli.clean && !dry_run {
+            println!(
+                "\n{}",
+                "💡 Run with `--clean` to scrub these projects, or `--tui` for interactive mode."
+                    .dimmed()
+            );
+        }
         return Ok(());
     }
 
