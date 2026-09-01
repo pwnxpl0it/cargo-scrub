@@ -39,7 +39,11 @@ pub struct Cli {
     #[arg(long)]
     pub skip_workspaces: bool,
 
-    /// Only list crates that would be cleaned
+    /// Execute the cleaning process (if omitted, cargo-scrub inspects and lists projects without cleaning)
+    #[arg(long)]
+    pub clean: bool,
+
+    /// Only list crates that would be cleaned (legacy alias, default behavior)
     #[arg(long)]
     pub check: bool,
 

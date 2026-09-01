@@ -38,6 +38,7 @@ cargo-scrub [OPTIONS] [PATH]
 
 ### Common Options
 
+- `--clean`             : Execute the cleaning process (omitting this lists detected crates safely)
 - `--tui`               : Launch full-screen interactive TUI dashboard
 - `--dry-run`           : Show what would be cleaned, but don’t actually clean
 - `--quiet, -q`         : Suppress most output
@@ -47,7 +48,7 @@ cargo-scrub [OPTIONS] [PATH]
 - `--filter <REGEX>`    : Only clean crates matching regex (by name or path)
 - `--skip-workspaces`   : Skip workspace roots
 - `--workspace-mode`    : Workspace mode (`root`, `members`, or `all`)
-- `--check`             : Only list crates that would be cleaned
+- `--check`             : Only list crates that would be cleaned (default behavior)
 - `--config <FILE>`     : Load options from a config file
 - `--log-level <LEVEL>` : Set log level (info, debug, error, silent)
 
@@ -75,21 +76,21 @@ cargo-scrub --tui
 
 ### Examples
 
-- Clean all crates in the current directory tree:
+- Scan and preview detected crates safely without cleaning:
   ```
   cargo-scrub
   ```
-- Dry run, only show what would be cleaned:
+- Clean all detected crates in the current directory tree:
   ```
-  cargo-scrub --dry-run
+  cargo-scrub --clean
   ```
 - Clean with 8 parallel jobs, max depth 3:
   ```
-  cargo-scrub --jobs 8 --max-depth 3
+  cargo-scrub --clean --jobs 8 --max-depth 3
   ```
 - Only clean crates matching `foo`:
   ```
-  cargo-scrub --filter foo
+  cargo-scrub --clean --filter foo
   ```
 - Interactive mode:
   ```
