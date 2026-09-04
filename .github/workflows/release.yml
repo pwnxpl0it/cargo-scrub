@@ -50,6 +50,10 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
+      - name: Install cross
+        if: matrix.cross
+        uses: taiki-e/install-cross-action@v2
+
       - name: Cache cargo build artifacts
         uses: Swatinem/rust-cache@v2
         with:
