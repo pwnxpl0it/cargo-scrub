@@ -52,7 +52,9 @@ jobs:
 
       - name: Install cross
         if: matrix.cross
-        uses: taiki-e/install-cross-action@v2
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
 
       - name: Cache cargo build artifacts
         uses: Swatinem/rust-cache@v2
