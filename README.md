@@ -1,19 +1,28 @@
 # cargo-scrub
 
+[![CI](https://img.shields.io/github/actions/workflow/status/pwnxpl0it/cargo-scrub/ci.yml?branch=master&label=CI&logo=github)](https://github.com/pwnxpl0it/cargo-scrub/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/pwnxpl0it/cargo-scrub?logo=github)](https://github.com/pwnxpl0it/cargo-scrub/releases)
+[![Downloads](https://img.shields.io/github/downloads/pwnxpl0it/cargo-scrub/total?color=blue)](https://github.com/pwnxpl0it/cargo-scrub/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+
 A polished, fast, and safe CLI tool to recursively clean Rust crates in a directory tree. Designed for maintainers, CI, and power users who want to keep their Rust projects tidy.
 
 ## Demo
 
 ![cargo-scrub discovering crates, then cleaning one from the TUI](assets/demo.gif)
 
-A plain `cargo scrub` run — walk the tree, list every crate it finds and report
-the reclaimable space — followed by TUI mode: `A` clears the default selection,
-`Up/Down` navigate, `Space` selects a crate, and `c` cleans it. The TUI take
-runs with `--dry-run`, which is why the summary reports `Reclaimed 0 B`.
+The recording opens with a plain `cargo scrub` run that walks the tree and
+reports every crate it finds plus the reclaimable space, then switches to TUI
+mode: `A` clears the default selection, `Up/Down` navigate, `Space` selects a
+crate, and `c` cleans it. The fixtures shown are real throwaway crates with
+dummy build artifacts (sizes spread from 14 MB to 1.2 GB), and the TUI take
+cleans the selected crate for real — not a dry run — so the summary reports the
+actual reclaimed space.
 
 The recording is scripted with [vhs](https://github.com/charmbracelet/vhs); the
-tape lives in [`assets/demo.tape`](assets/demo.tape) and re-records with
-`vhs assets/demo.tape`.
+tape lives in [`assets/demo.tape`](assets/demo.tape) and is re-recorded
+automatically by the release pipeline, so the GIF always reflects the current
+`master`.
 
 ## Features
 
@@ -32,6 +41,24 @@ tape lives in [`assets/demo.tape`](assets/demo.tape) and re-records with
 - 🛠️ **Robust, extensible, and well-tested**
 
 ## Installation
+
+### Prebuilt binaries
+
+Grab the binary for your platform from the [latest release](https://github.com/pwnxpl0it/cargo-scrub/releases) — no Rust toolchain required:
+
+| Platform | Asset |
+|---|---|
+| Linux (x86_64) | `cargo-scrub-x86_64-unknown-linux-gnu` |
+| Linux (ARM64) | `cargo-scrub-aarch64-unknown-linux-gnu` |
+| macOS (Intel) | `cargo-scrub-x86_64-apple-darwin` |
+| macOS (Apple Silicon) | `cargo-scrub-aarch64-apple-darwin` |
+| Windows (x86_64) | `cargo-scrub-x86_64-pc-windows-msvc.exe` |
+
+Drop it somewhere on your `PATH` (e.g. `~/.cargo/bin/`), make it executable, and
+it works both as a standalone command (`cargo-scrub`) and as a cargo subcommand
+(`cargo scrub`).
+
+### From source
 
 ```
 cargo install --path .
