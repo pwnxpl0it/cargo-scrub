@@ -1,1 +1,4 @@
 /target
+
+# Demo fixtures staged by the release workflow for the vhs recording
+.vhs-fixtures/

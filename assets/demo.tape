@@ -5,6 +5,13 @@
 # Requires: vhs, ffmpeg, ttyd, and a Chromium-based browser.
 #   vhs assets/demo.tape        # run from the repo root
 #
+# The hidden setup reads two environment variables so the same tape works
+# locally and on CI:
+#   REPO_ROOT  → where the repo (with a built `target/release/cargo-scrub`) lives
+#   DEMO_TREE  → a directory containing at least three Rust crates to discover
+# Locally these default to the developer layout; CI sets them explicitly and
+# stages throwaway fixture crates under `.vhs-fixtures/`.
+#
 # SAFETY: the TUI segment below passes --dry-run, so `c` reports what it
 # would clean without deleting anything. Drop --dry-run from the
 # "cargo scrub --tui" line to record a take that really cleans the one
@@ -26,9 +33,9 @@ Set Framerate 20
 Hide
 Type "unset PROMPT_COMMAND; PS1='> '"
 Enter
-Type "export PATH=$HOME/personal/cargo-scrub/target/release:$PATH"
+Type "export PATH=${REPO_ROOT:-$HOME/personal/cargo-scrub}/target/release:$PATH"
 Enter
-Type "cd ~/personal"
+Type "cd ${DEMO_TREE:-$HOME/personal}"
 Enter
 Type "clear"
 Enter
