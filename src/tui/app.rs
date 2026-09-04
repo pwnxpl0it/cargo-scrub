@@ -390,6 +390,22 @@ impl App {
         }
     }
 
+    /// Consume a pending clean request, returning the options and crates the
+    /// run should use.
+    ///
+    /// The options come from [`App::options`], so in-TUI toggles such as `d`
+    /// (dry-run) reach the actual run. Handing the options back together with
+    /// the selected crates keeps the two from drifting apart.
+    pub fn take_pending_clean(&mut self) -> Option<(ScrubOptions, Vec<CrateInfo>)> {
+        if !self.pending_clean {
+            return None;
+        }
+        let selected = self.selected_crates();
+        let options = self.options.clone();
+        self.begin_clean();
+        Some((options, selected))
+    }
+
     pub fn begin_clean(&mut self) {
         self.screen = Screen::Running;
         self.run_start = Some(Instant::now());
@@ -562,6 +578,72 @@ mod tests {
         });
         assert_eq!(app.screen, Screen::Summary);
         assert_eq!(app.reclaimed_bytes, 1024);
+    }
+
+    /// Regression: the `d` toggle used to update only the header badge while
+    /// the clean itself ran with the options captured before the TUI started.
+    #[test]
+    fn take_pending_clean_carries_the_dry_run_toggle() {
+        let mut app = App::new(sample_options());
+        assert!(!app.options.dry_run);
+        app.screen = Screen::Review;
+        app.crates = vec![sample_row("/a", true)];
+
+        app.apply_action(Action::ToggleDryRun);
+        app.apply_action(Action::StartClean);
+
+        let (options, selected) = app.take_pending_clean().expect("clean was requested");
+        assert!(options.dry_run, "the d toggle must reach the clean run");
+        assert_eq!(selected.len(), 1);
+        assert_eq!(app.screen, Screen::Running);
+    }
+
+    /// A CLI `--dry-run` must survive when the toggle is left alone.
+    #[test]
+    fn take_pending_clean_preserves_cli_dry_run() {
+        let mut options = sample_options();
+        options.dry_run = true;
+        let mut app = App::new(options);
+        app.screen = Screen::Review;
+        app.crates = vec![sample_row("/a", true)];
+
+        app.apply_action(Action::StartClean);
+
+        let (options, _) = app.take_pending_clean().expect("clean was requested");
+        assert!(options.dry_run);
+    }
+
+    #[test]
+    fn take_pending_clean_yields_only_selected_crates() {
+        let mut app = App::new(sample_options());
+        app.screen = Screen::Review;
+        app.crates = vec![sample_row("/a", false), sample_row("/b", true)];
+
+        app.apply_action(Action::StartClean);
+
+        let (_, selected) = app.take_pending_clean().expect("clean was requested");
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].path, PathBuf::from("/b"));
+    }
+
+    #[test]
+    fn take_pending_clean_is_none_without_a_request() {
+        let mut app = App::new(sample_options());
+        app.crates = vec![sample_row("/a", true)];
+        assert!(app.take_pending_clean().is_none());
+    }
+
+    /// Requesting a clean with nothing selected must not start a run.
+    #[test]
+    fn start_clean_with_empty_selection_does_nothing() {
+        let mut app = App::new(sample_options());
+        app.screen = Screen::Review;
+        app.crates = vec![sample_row("/a", false)];
+
+        app.apply_action(Action::StartClean);
+
+        assert!(!app.pending_clean);
+        assert!(app.take_pending_clean().is_none());
     }
 
     #[test]

@@ -61,10 +61,8 @@ pub async fn run_tui(options: ScrubOptions) -> Result<()> {
             }
         }
 
-        if app.pending_clean {
-            app.begin_clean();
-            let plan = build_clean_plan(&app.selected_crates());
-            let clean_options = options.clone();
+        if let Some((clean_options, selected)) = app.take_pending_clean() {
+            let plan = build_clean_plan(&selected);
             let (tx, rx) = mpsc::unbounded_channel();
             clean_rx = Some(rx);
             tokio::spawn(async move {
