@@ -18,7 +18,7 @@ use cargo_scrub::logging::init_logging;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+    let cli = Cli::parse_from(cli::strip_cargo_subcommand(std::env::args_os()));
     let config = if let Some(ref path) = cli.config {
         load_config(path).unwrap_or_default()
     } else {
