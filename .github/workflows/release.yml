@@ -140,10 +140,22 @@ jobs:
       - name: Prepare demo crate fixtures
         run: |
           mkdir -p .vhs-fixtures
-          for crate in alpha beta gamma delta epsilon; do
-            mkdir -p ".vhs-fixtures/${crate}/src"
-            printf '[package]\nname = "%s"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\n\n[workspace]\n' "${crate}" > ".vhs-fixtures/${crate}/Cargo.toml"
+          # Sorted-path order is alpha, beta, delta, epsilon, gamma, so "delta"
+          # is the third crate the tape navigates to and cleans. Target dirs are
+          # sparse dummy artifacts: `truncate` materializes them instantly and
+          # dir_size reports the full logical size (see demo table below).
+          declare -a crates=(alpha beta delta epsilon gamma)
+          declare -a sizes=(1200M 640M 380M 96M 14M)
+          for i in "${!crates[@]}"; do
+            crate="${crates[$i]}"
+            mkdir -p ".vhs-fixtures/${crate}/src" ".vhs-fixtures/${crate}/target/debug"
+            # NB: no "[workspace]" table here — the default workspace mode is
+            # "members", which drops workspace roots with no members and the
+            # demo would discover zero projects. A plain package is discovered
+            # directly and shows up in the scrub list.
+            printf '[package]\nname = "%s"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\n' "${crate}" > ".vhs-fixtures/${crate}/Cargo.toml"
             printf 'fn main() {}\n' > ".vhs-fixtures/${crate}/src/main.rs"
+            truncate -s "${sizes[$i]}" ".vhs-fixtures/${crate}/target/debug/dummy.so"
           done
 
       - name: Record demo GIF with vhs

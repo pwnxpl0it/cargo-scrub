@@ -12,10 +12,11 @@
 # Locally these default to the developer layout; CI sets them explicitly and
 # stages throwaway fixture crates under `.vhs-fixtures/`.
 #
-# SAFETY: the TUI segment below passes --dry-run, so `c` reports what it
-# would clean without deleting anything. Drop --dry-run from the
-# "cargo scrub --tui" line to record a take that really cleans the one
-# selected crate (and only that one).
+# SAFETY: the TUI segment below really cleans the one selected crate. This is
+# only safe because CI stages throwaway fixtures under DEMO_TREE; add
+# --dry-run to the "cargo scrub --tui" line when recording against real
+# crates locally (the frame will then report "could clean" instead of
+# deleting anything).
 
 Output assets/demo.gif
 
@@ -46,8 +47,8 @@ Type "cargo scrub"
 Enter
 Sleep 4s
 
-# ── 2. TUI mode ──
-Type "cargo scrub --tui --dry-run"
+# ── 2. TUI mode: select one crate and really clean it ──
+Type "cargo scrub --tui"
 Enter
 Sleep 3s
 
