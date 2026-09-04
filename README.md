@@ -64,7 +64,7 @@ it works both as a standalone command (`cargo-scrub`) and as a cargo subcommand
 cargo install --path .
 ```
 
-Or from crates.io (when published):
+Or from [crates.io](https://crates.io/crates/cargo-scrub):
 
 ```
 cargo install cargo-scrub
