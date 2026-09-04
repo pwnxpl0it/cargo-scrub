@@ -2,6 +2,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pwnxpl0it/cargo-scrub/ci.yml?branch=master&label=CI&logo=github)](https://github.com/pwnxpl0it/cargo-scrub/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/pwnxpl0it/cargo-scrub?logo=github)](https://github.com/pwnxpl0it/cargo-scrub/releases)
+[![crates.io](https://img.shields.io/crates/v/cargo-scrub?logo=rust)](https://crates.io/crates/cargo-scrub)
 [![Downloads](https://img.shields.io/github/downloads/pwnxpl0it/cargo-scrub/total?color=blue)](https://github.com/pwnxpl0it/cargo-scrub/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 
