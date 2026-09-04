@@ -2,6 +2,19 @@
 
 A polished, fast, and safe CLI tool to recursively clean Rust crates in a directory tree. Designed for maintainers, CI, and power users who want to keep their Rust projects tidy.
 
+## Demo
+
+![cargo-scrub discovering crates, then cleaning one from the TUI](assets/demo.gif)
+
+A plain `cargo scrub` run — walk the tree, list every crate it finds and report
+the reclaimable space — followed by TUI mode: `A` clears the default selection,
+`Up/Down` navigate, `Space` selects a crate, and `c` cleans it. The TUI take
+runs with `--dry-run`, which is why the summary reports `Reclaimed 0 B`.
+
+The recording is scripted with [vhs](https://github.com/charmbracelet/vhs); the
+tape lives in [`assets/demo.tape`](assets/demo.tape) and re-records with
+`vhs assets/demo.tape`.
+
 ## Features
 
 - 🚀 **Recursively walks directories to find and clean Rust crates**
@@ -34,6 +47,12 @@ cargo install cargo-scrub
 
 ```
 cargo-scrub [OPTIONS] [PATH]
+```
+
+Installed as a cargo subcommand, it is equivalent to:
+
+```
+cargo scrub [OPTIONS] [PATH]
 ```
 
 ### Common Options
