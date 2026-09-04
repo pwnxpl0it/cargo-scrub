@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::ffi::OsString;
 use std::path::PathBuf;
 use cargo_scrub::loglevel::LogLevel;
 use cargo_scrub::engine::WorkspaceMode;
@@ -62,4 +63,80 @@ pub struct Cli {
     /// Workspace cleaning mode: root, members, or all
     #[arg(long, value_enum, default_value_t = WorkspaceMode::Members)]
     pub workspace_mode: WorkspaceMode,
+}
+
+/// Strip the subcommand name cargo injects when invoked as `cargo scrub`.
+///
+/// Cargo runs external subcommands as `cargo-scrub scrub [ARGS...]`, so
+/// without this the literal `scrub` binds to the positional `PATH` argument
+/// and cargo-scrub tries to walk a directory named `scrub`. Only the first
+/// argument is considered, so `cargo scrub scrub` still targets `./scrub`.
+/// Direct `cargo-scrub [ARGS...]` invocations pass through unchanged.
+pub fn strip_cargo_subcommand<I, T>(args: I) -> Vec<OsString>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString>,
+{
+    let mut argv: Vec<OsString> = args.into_iter().map(Into::into).collect();
+    if argv.get(1).map(|a| a.to_str() == Some("scrub")).unwrap_or(false) {
+        argv.remove(1);
+    }
+    argv
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn strip(args: &[&str]) -> Vec<String> {
+        strip_cargo_subcommand(args.iter().copied())
+            .into_iter()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect()
+    }
+
+    #[test]
+    fn strips_the_subcommand_cargo_injects() {
+        assert_eq!(strip(&["cargo-scrub", "scrub"]), ["cargo-scrub"]);
+        assert_eq!(
+            strip(&["cargo-scrub", "scrub", "--tui"]),
+            ["cargo-scrub", "--tui"]
+        );
+    }
+
+    #[test]
+    fn leaves_direct_invocations_alone() {
+        assert_eq!(
+            strip(&["cargo-scrub", "--tui", "--dry-run"]),
+            ["cargo-scrub", "--tui", "--dry-run"]
+        );
+        assert_eq!(
+            strip(&["cargo-scrub", "/tmp/crates"]),
+            ["cargo-scrub", "/tmp/crates"]
+        );
+    }
+
+    /// `cargo scrub scrub` must still target the `./scrub` directory: only
+    /// the argument cargo injects is removed, not every occurrence.
+    #[test]
+    fn keeps_a_path_that_is_itself_named_scrub() {
+        assert_eq!(
+            strip(&["cargo-scrub", "scrub", "scrub"]),
+            ["cargo-scrub", "scrub"]
+        );
+    }
+
+    #[test]
+    fn handles_short_argv_without_panicking() {
+        assert_eq!(strip(&["cargo-scrub"]), ["cargo-scrub"]);
+        assert!(strip(&[]).is_empty());
+    }
+
+    /// The parsed CLI must agree with the stripping: `cargo scrub` targets the
+    /// current directory, not a directory called `scrub`.
+    #[test]
+    fn parsed_path_defaults_to_cwd_under_cargo() {
+        let cli = Cli::parse_from(strip_cargo_subcommand(["cargo-scrub", "scrub"]));
+        assert_eq!(cli.path, PathBuf::from("."));
+    }
 }
