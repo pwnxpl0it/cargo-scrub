@@ -76,6 +76,9 @@ pub async fn run_tui(options: ScrubOptions) -> Result<()> {
 
         if event::poll(Duration::from_millis(16))? {
             if let Event::Key(key) = event::read()? {
+                if key.kind != event::KeyEventKind::Press {
+                    continue;
+                }
                 if app.show_help
                     && matches!(key.code, event::KeyCode::Esc | event::KeyCode::Char('?'))
                 {
