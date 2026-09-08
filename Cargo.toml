@@ -1,6 +1,6 @@
 [package]
 name = "cargo-scrub"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Mohamed Tarek @pwnxpl0it"]
 description = "A polished CLI tool to recursively clean Rust crates in a directory tree."
