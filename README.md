@@ -156,6 +156,10 @@ filter = "mycrate"
 log_level = "info"
 ```
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/chart?repos=pwnxpl0it/cargo-scrub&type=date&legend=top-left)](https://www.star-history.com/?repos=pwnxpl0it%2Fcargo-scrub&type=date&legend=top-left)
+
 ## Contributing
 
 Contributions are welcome! Please open issues or pull requests. All code should be idiomatic, tested, and documented. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
